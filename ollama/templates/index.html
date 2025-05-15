@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gender Analyser</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .chat-container {
+      width: 50%;
+      max-width: 600px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;              /* was centre */
+    }
+
+    /* Toggle buttons */
+    .toggle-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .toggle-buttons button {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background: #e9e9e9;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-buttons button.active {
+      background: #007bff;
+      color: white;
+    }
+
+    .chat-header {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .chat-box {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      background: #fafafa;
+      text-align: left;
+    }
+    .input-container {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;             /* was centre */
+    }
+    textarea {
+      width: calc(100% - 20px);
+      height: 120px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    /* Styled Send and Upload buttons */
+    .send, .upload {
+      margin-top: 10px;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, #6b9dfc, #0056b3);
+      color: white;
+      transition: opacity .2s;
+    }
+    .send:hover, .upload:hover {
+      opacity: .85;
+    }
+
+    /* Rectangular upload area */
+    #uploadArea {
+      width: 100%;
+      height: 150px;
+      border: 2px dashed #007bff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;             /* was centre */
+      justify-content: center;         /* was centre */
+      color: #007bff;
+      font-size: 16px;
+      cursor: pointer;
+      background: #f9f9f9;
+      overflow: hidden;
+      position: relative;
+      text-align: center;
+    }
+    #uploadArea img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    /* Hide the native file input */
+    #imageFile {
+      display: none;
+    }
+
+    /* Spinner styles */
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: #666;
+      margin-top: 10px;
+      text-align: left;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="toggle-buttons">
+      <button id="btnArticle" class="active">Process Text</button>
+      <button id="btnImage">Process Image</button>
+    </div>
+
+    <!-- Article UI -->
+    <div id="articleUI">
+      <div class="chat-header">Upload Article</div>
+      <div id="chat" class="chat-box"></div>
+      <form id="articleForm" class="input-container">
+        <textarea id="userInput" placeholder="Input Article"></textarea>
+        <button type="submit" class="send">
+          Send
+          <span id="sendSpinner" class="spinner" style="display: none;"></span>
+        </button>
+      </form>
+      <div class="disclaimer">
+        <em>Disclaimer:</em> This analysis is powered by Deepseek:32b via Ollama. While it’s generally accurate at extracting and gender‑classifying names, AI can still make mistakes—please treat the results as indicative rather than definitive.
+      </div>
+    </div>
+
+    <!-- Image UI -->
+    <div id="imageUI" style="display: none;">
+      <div class="chat-header">Upload Image</div>
+      <form id="imageForm" class="input-container" enctype="multipart/form-data">
+        <label for="imageFile" id="uploadArea">
+          Click to choose image
+        </label>
+        <input type="file" id="imageFile" accept="image/*" required />
+        <button type="submit" class="upload">Send</button>
+      </form>
+
+      <div id="legend" style="margin-top: 15px; font-size: 14px; color: #555; text-align: left;">
+        <strong>Legend:</strong>
+        <ul style="list-style: none; padding-left: 0; margin: 5px 0;">
+          <li><span style="display: inline-block; width: 12px; height: 12px; background: blue; margin-right: 6px; vertical-align: middle;"></span>Male</li>
+          <li><span style="display: inline-block; width: 12px; height: 12px; background: pink; margin-right: 6px; vertical-align: middle;"></span>Female</li>
+          <li><span style="display: inline-block; width: 12px; height: 12px; background: green; margin-right: 6px; vertical-align: middle;"></span>Unknown</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+    <script>
+        // Toggle logic
+        const btnArticle = document.getElementById('btnArticle');
+        const btnImage   = document.getElementById('btnImage');
+        const articleUI  = document.getElementById('articleUI');
+        const imageUI    = document.getElementById('imageUI');
+        const articleForm  = document.getElementById('articleForm');
+        const sendBtn      = articleForm.querySelector('.send');
+        const sendSpinner  = document.getElementById('sendSpinner');
+
+        btnArticle.addEventListener('click', () => {
+            btnArticle.classList.add('active');
+            btnImage.classList.remove('active');
+            articleUI.style.display = 'block';
+            imageUI.style.display   = 'none';
+        });
+        btnImage.addEventListener('click', () => {
+            btnImage.classList.add('active');
+            btnArticle.classList.remove('active');
+            articleUI.style.display = 'none';
+            imageUI.style.display   = 'block';
+        });
+
+        // Sanitisation fns
+        function sanitizeInput(text) {
+            return text
+                .replace(/[\u2010-\u2015]/g, '-')
+                .replace(/[^\x00-\x7F]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+        function sanitizeMalteseCharacters(text) {
+            const replacements = {
+                'ċ':'c','Ċ':'C','ġ':'g','Ġ':'G',
+                'ħ':'h','Ħ':'H','ż':'z','Ż':'Z'
+            };
+            return text.replace(/[ċĊġĠħĦżŻ]/g, m => replacements[m] || m);
+        }
+        articleForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Show spinner & disable button
+            sendSpinner.style.display = 'inline-block';
+            sendBtn.disabled = true;
+
+            await sendMessage();
+
+            // Hide spinner & re‑enable
+            sendSpinner.style.display = 'none';
+            sendBtn.disabled = false;
+        });
+        // Send article to Ollama via /chatbot
+        async function sendMessage() {
+            let userText = document.getElementById("userInput").value;
+            userText = sanitizeMalteseCharacters(sanitizeInput(userText));
+
+            const predefinedPrompt =
+                ` You are a data extraction assistant. From the news article below, identify each unique individual exactly once (if someone is later referred to by surname only, treat it as the same person). Determine their gender using name‑based and contextual clues. list the names of the people you count — only count unique people. Return the list of people and these exact lines, using integer counts for the gender breakdown:
+            List of People
+            Male: <count>
+            Female: <count>
+            Unknown: <count>
+
+            Article:\n`;
+            const fullPrompt = sanitizeInput(
+                sanitizeMalteseCharacters(predefinedPrompt + userText)
+            );
+
+            try {
+                const resp = await fetch("/chatbot", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: fullPrompt })
+                });
+                const { response: botText } = await resp.json();
+                const chatDiv = document.getElementById("chat");
+                const msg    = document.createElement("div");
+                msg.innerHTML = `<strong>Bot:</strong><br>${botText.replace(/\n/g, "<br>")}`;
+                chatDiv.appendChild(msg);
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            } catch (err) {
+                alert("Error contacting the chatbot.");
+                console.error(err);
+            }
+            }
+
+        // Preview image in rectangle
+        const imageFile = document.getElementById('imageFile');
+        const uploadArea = document.getElementById('uploadArea');
+        imageFile.addEventListener('change', () => {
+            const file = imageFile.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                uploadArea.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // On upload, send to /upload-image and replace form with processed image
+        document.getElementById('imageForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('image', imageFile.files[0]);
+            const resp = await fetch('/upload-image', { method: 'POST', body: formData });
+            const data = await resp.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                // swap out the form for the annotated image
+                const form = document.getElementById('imageForm');
+                const img  = document.createElement('img');
+                img.src    = data.url;
+                img.alt    = 'Processed Image';
+                img.style.maxWidth = '100%';
+                form.replaceWith(img);
+            }
+        });
+    </script>
+</body>
+</html>
