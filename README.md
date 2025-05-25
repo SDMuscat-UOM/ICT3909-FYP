@@ -18,5 +18,4 @@ This project requires the following Python packages:
 
 - **flask**  
 
-- **en-core-web-sm** (SpaCy English model)  
-pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl
+- **en-core-web-sm** (SpaCy English model) via: pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl
